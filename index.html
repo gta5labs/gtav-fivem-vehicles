@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FiveLabs Vehicle Database</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+
+:root{
+  --cds-background:#161616;
+  --cds-layer-01:#262626;
+  --cds-layer-02:#393939;
+  --cds-layer-hover:#353535;
+  --cds-layer-active:#525252;
+  --cds-border-subtle:#393939;
+  --cds-border-strong:#6f6f6f;
+  --cds-text-primary:#f4f4f4;
+  --cds-text-secondary:#c6c6c6;
+  --cds-text-helper:#8d8d8d;
+  --cds-interactive:#4589ff;
+  --cds-highlight:#002d9c;
+  --cds-tag-bg:#1a3a6e;
+  --cds-tag-text:#a6c8ff;
+  --cds-spacing-03:8px;
+  --cds-spacing-05:16px;
+  --cds-spacing-06:24px;
+  --cds-spacing-07:32px;
+}
+
+html,body{min-height:100%}
+
+body{
+  font-family:'IBM Plex Sans',system-ui,sans-serif;
+  background:var(--cds-background);
+  color:var(--cds-text-primary);
+  font-size:14px;
+}
+
+button,input{font:inherit}
+
+.sidebar-backdrop{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.6);
+  z-index:40;
+}
+.sidebar-backdrop.open{display:block}
+
+.sidebar{
+  position:fixed;
+  left:0;
+  top:48px;
+  bottom:0;
+  width:240px;
+  background:var(--cds-layer-01);
+  border-right:1px solid var(--cds-border-subtle);
+  overflow-y:auto;
+  z-index:45;
+}
+
+.sidebar-section{
+  border-bottom:1px solid var(--cds-border-subtle);
+  padding-bottom:8px;
+}
+
+.sidebar-section-title{
+  font-size:12px;
+  font-weight:600;
+  letter-spacing:.32px;
+  text-transform:uppercase;
+  color:var(--cds-text-helper);
+  padding:16px 16px 8px;
+}
+
+.sidebar button{
+  display:block;
+  width:100%;
+  padding:10px 16px;
+  background:transparent;
+  border:0;
+  border-left:3px solid transparent;
+  color:var(--cds-text-secondary);
+  cursor:pointer;
+  text-align:left;
+  font-size:14px;
+  transition:background .1s,border-color .1s;
+  min-height:44px;
+}
+
+.sidebar button:hover{background:var(--cds-layer-hover)}
+.sidebar button.active{
+  background:var(--cds-layer-active);
+  border-left-color:var(--cds-interactive);
+  color:var(--cds-text-primary);
+  font-weight:500;
+}
+
+.topbar{
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  height:48px;
+  background:var(--cds-layer-01);
+  border-bottom:1px solid var(--cds-border-subtle);
+  display:flex;
+  align-items:center;
+  padding:0 16px;
+  gap:8px;
+  z-index:50;
+}
+
+.topbar-title{
+  font-size:14px;
+  font-weight:600;
+  letter-spacing:.1px;
+}
+.topbar-title span{color:var(--cds-interactive)}
+
+.menu-btn{
+  display:none;
+  align-items:center;
+  justify-content:center;
+  background:transparent;
+  border:0;
+  color:var(--cds-text-primary);
+  cursor:pointer;
+  padding:6px;
+  line-height:1;
+  flex-shrink:0;
+}
+.menu-btn svg{display:block}
+
+.main{
+  margin-left:240px;
+  margin-top:48px;
+  padding:var(--cds-spacing-07);
+}
+
+.page-header{
+  display:flex;
+  align-items:center;
+  gap:var(--cds-spacing-05);
+  margin-bottom:var(--cds-spacing-06);
+  flex-wrap:wrap;
+  padding-bottom:var(--cds-spacing-05);
+  border-bottom:1px solid var(--cds-border-subtle);
+}
+
+.page-header h1{
+  font-size:20px;
+  font-weight:600;
+  font-family:'IBM Plex Sans',sans-serif;
+}
+
+.tag{
+  display:inline-block;
+  background:var(--cds-tag-bg);
+  color:var(--cds-tag-text);
+  font-size:12px;
+  font-family:'IBM Plex Mono',monospace;
+  padding:2px 8px;
+  letter-spacing:.32px;
+}
+
+.size-control{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-left:auto;
+  font-size:12px;
+  color:var(--cds-text-helper);
+  letter-spacing:.32px;
+}
+
+.size-control label{
+  text-transform:uppercase;
+  font-weight:500;
+}
+
+.size-control input[type="range"]{
+  width:128px;
+  accent-color:var(--cds-interactive);
+}
+
+.grid{
+  display:grid;
+  gap:1px;
+  background:var(--cds-border-subtle);
+  grid-template-columns:repeat(auto-fill,minmax(var(--thumb-size,180px),1fr));
+}
+
+.card{
+  background:var(--cds-layer-01);
+  cursor:pointer;
+  transition:background .1s;
+  position:relative;
+  min-width:0;
+}
+
+.card:hover{background:var(--cds-layer-hover)}
+
+.card-image{
+  width:100%;
+  aspect-ratio:1;
+  position:relative;
+  background:var(--cds-background);
+  overflow:hidden;
+}
+
+.card img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  display:block;
+}
+
+.card .label{
+  padding:8px 12px;
+  font-size:12px;
+  font-family:'IBM Plex Mono',monospace;
+  color:var(--cds-text-secondary);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  letter-spacing:.32px;
+  border-top:1px solid var(--cds-border-subtle);
+}
+
+.card .missing{
+  position:absolute;
+  inset:0;
+  display:none;
+  place-items:center;
+  color:var(--cds-text-helper);
+  font:12px 'IBM Plex Mono',monospace;
+}
+.card.image-error img{display:none}
+.card.image-error .missing{display:grid}
+
+#scroll-sentinel{height:1px}
+
+.empty{
+  display:none;
+  border:1px solid var(--cds-border-subtle);
+  background:var(--cds-layer-01);
+  color:var(--cds-text-secondary);
+  padding:24px;
+  line-height:1.6;
+}
+.empty strong{
+  display:block;
+  color:var(--cds-text-primary);
+  margin-bottom:4px;
+}
+.empty code{
+  color:var(--cds-tag-text);
+  font-family:'IBM Plex Mono',monospace;
+}
+
+.lightbox{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(34,34,34,.9);
+  z-index:100;
+  justify-content:center;
+  align-items:center;
+  cursor:pointer;
+}
+
+.lightbox.open{display:flex}
+
+.lightbox img{
+  max-width:90vw;
+  max-height:90vh;
+  object-fit:contain;
+}
+
+.lightbox .info{
+  position:absolute;
+  bottom:24px;
+  color:var(--cds-text-secondary);
+  font-size:14px;
+  font-family:'IBM Plex Mono',monospace;
+  background:var(--cds-layer-01);
+  padding:8px 16px;
+  border:1px solid var(--cds-border-subtle);
+  letter-spacing:.32px;
+  cursor:pointer;
+  user-select:none;
+}
+
+.lightbox .info.copied{
+  color:var(--cds-tag-text);
+  border-color:var(--cds-interactive);
+}
+
+::-webkit-scrollbar{width:8px}
+::-webkit-scrollbar-track{background:var(--cds-background)}
+::-webkit-scrollbar-thumb{background:var(--cds-layer-02)}
+::-webkit-scrollbar-thumb:hover{background:var(--cds-layer-active)}
+
+@media(max-width:767px){
+  .menu-btn{display:flex}
+  .sidebar{
+    top:0;
+    transform:translateX(-100%);
+    transition:transform .22s ease;
+    width:min(240px,80vw);
+    box-shadow:4px 0 24px rgba(0,0,0,.5);
+  }
+  .sidebar.open{transform:translateX(0)}
+  .main{
+    margin-left:0;
+    padding:16px 12px;
+  }
+  .page-header h1{font-size:16px}
+  .size-control label{display:none}
+  .size-control input[type="range"]{width:80px}
+  .grid{--thumb-size:120px}
+  .lightbox img{max-width:96vw;max-height:80vh}
+  .lightbox .info{
+    bottom:12px;
+    font-size:12px;
+    padding:6px 12px;
+    max-width:90vw;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
+<div class="topbar">
+  <button class="menu-btn" id="menu-btn" aria-label="Toggle menu">
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+      <line x1="3" y1="5" x2="17" y2="5"/>
+      <line x1="3" y1="10" x2="17" y2="10"/>
+      <line x1="3" y1="15" x2="17" y2="15"/>
+    </svg>
+  </button>
+  <div class="topbar-title"><span>Vehicle</span>&nbsp;/ Viewer</div>
+</div>
+
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-section">
+    <div class="sidebar-section-title">Category</div>
+    <div id="category-buttons"></div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="page-header">
+    <h1 id="title">Select a category</h1>
+    <span class="tag" id="count"></span>
+    <div class="size-control">
+      <label>Size</label>
+      <input type="range" id="thumb-size" min="100" max="400" value="180">
+    </div>
+  </div>
+
+  <div class="empty" id="empty">
+    <strong>Vehicle database is not generated yet.</strong>
+    Run <code>db_setup.bat</code> once. It downloads the official FiveM vehicle list and previews into this folder.
+  </div>
+
+  <div class="grid" id="grid"></div>
+  <div id="scroll-sentinel"></div>
+</div>
+
+<div class="lightbox" id="lightbox">
+  <img id="lb-img" src="" alt="">
+  <div class="info" id="lb-info" title="Click to copy the direct image URL"></div>
+</div>
+
+<script src="vehicles/index.js"></script>
+<script>
+const BATCH = 60;
+
+let structure = (window.VEHICLE_DB && window.VEHICLE_DB.categories) || {};
+let currentCategory = null;
+let currentItems = [];
+let renderOffset = 0;
+let imgObserver = null;
+let sentinelObserver = null;
+
+function naturalCategorySort(a,b){
+  if(a === 'All vehicles') return -1;
+  if(b === 'All vehicles') return 1;
+  return a.localeCompare(b);
+}
+
+function buildAllCategory(categories){
+  const all = [];
+  Object.keys(categories).forEach(category => {
+    (categories[category] || []).forEach(item => all.push(item));
+  });
+  all.sort((a,b) => a.model.localeCompare(b.model));
+  return all;
+}
+
+function loadStructure(){
+  const categoryBtns = document.getElementById('category-buttons');
+  const names = Object.keys(structure).sort(naturalCategorySort);
+
+  if(!names.length){
+    document.getElementById('empty').style.display = 'block';
+    document.getElementById('title').textContent = 'Vehicle database';
+    document.getElementById('count').textContent = 'not generated';
+    return;
+  }
+
+  const allItems = buildAllCategory(structure);
+  const displayCategories = {'All vehicles': allItems, ...structure};
+  structure = displayCategories;
+
+  Object.keys(displayCategories).sort(naturalCategorySort).forEach(category => {
+    const btn = document.createElement('button');
+    btn.textContent = `${category} (${displayCategories[category].length})`;
+    btn.dataset.category = category;
+    btn.onclick = () => selectCategory(category);
+    categoryBtns.appendChild(btn);
+  });
+
+  selectCategory('All vehicles');
+}
+
+function selectCategory(category){
+  currentCategory = category;
+
+  document.querySelectorAll('#category-buttons button').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.category === category);
+  });
+
+  currentItems = structure[category] || [];
+  renderOffset = 0;
+
+  document.getElementById('title').textContent = category;
+  document.getElementById('count').textContent = `${currentItems.length} vehicles`;
+  document.getElementById('empty').style.display = currentItems.length ? 'none' : 'block';
+
+  if(imgObserver) imgObserver.disconnect();
+  if(sentinelObserver) sentinelObserver.disconnect();
+
+  document.getElementById('grid').innerHTML = '';
+
+  imgObserver = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if(entry.isIntersecting){
+        entry.target.src = entry.target.dataset.src;
+        imgObserver.unobserve(entry.target);
+      }
+    });
+  }, {rootMargin:'400px'});
+
+  sentinelObserver = new IntersectionObserver(entries => {
+    if(entries[0].isIntersecting) renderBatch();
+  }, {rootMargin:'300px'});
+
+  sentinelObserver.observe(document.getElementById('scroll-sentinel'));
+
+  if(window.innerWidth < 768) closeSidebar();
+  renderBatch();
+}
+
+function renderBatch(){
+  const grid = document.getElementById('grid');
+  const end = Math.min(renderOffset + BATCH, currentItems.length);
+
+  for(let i = renderOffset; i < end; i++){
+    const item = currentItems[i];
+
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    const imageWrap = document.createElement('div');
+    imageWrap.className = 'card-image';
+
+    const img = document.createElement('img');
+    img.dataset.src = item.path;
+    img.alt = item.displayName || item.model;
+    img.loading = 'lazy';
+    img.onerror = () => card.classList.add('image-error');
+
+    const missing = document.createElement('div');
+    missing.className = 'missing';
+    missing.textContent = 'No preview';
+
+    const label = document.createElement('div');
+    label.className = 'label';
+    label.textContent = item.model;
+
+    imageWrap.appendChild(img);
+    imageWrap.appendChild(missing);
+    card.appendChild(imageWrap);
+    card.appendChild(label);
+    card.onclick = () => openLightbox(item);
+    grid.appendChild(card);
+
+    imgObserver.observe(img);
+  }
+
+  renderOffset = end;
+
+  if(renderOffset >= currentItems.length && sentinelObserver){
+    sentinelObserver.disconnect();
+  }
+}
+
+const lightbox = document.getElementById('lightbox');
+const lbImg = document.getElementById('lb-img');
+const lbInfo = document.getElementById('lb-info');
+let currentLightboxItem = null;
+
+function directImageUrl(item){
+  return new URL(item.path, window.location.href).href;
+}
+
+function openLightbox(item){
+  currentLightboxItem = item;
+  lbImg.src = item.path;
+  lbImg.alt = item.displayName || item.model;
+  lbInfo.classList.remove('copied');
+  lbInfo.textContent = `${item.model}.webp · ${item.hash}`;
+  lightbox.classList.add('open');
+}
+
+lightbox.onclick = event => {
+  if(event.target === lbInfo) return;
+  lightbox.classList.remove('open');
+};
+
+lbInfo.onclick = async event => {
+  event.stopPropagation();
+  if(!currentLightboxItem) return;
+
+  const url = directImageUrl(currentLightboxItem);
+
+  try{
+    await navigator.clipboard.writeText(url);
+    lbInfo.textContent = 'Image URL copied';
+    lbInfo.classList.add('copied');
+
+    setTimeout(() => {
+      if(!currentLightboxItem) return;
+      lbInfo.textContent = `${currentLightboxItem.model}.webp · ${currentLightboxItem.hash}`;
+      lbInfo.classList.remove('copied');
+    }, 1200);
+  }catch{
+    lbInfo.textContent = url;
+  }
+};
+
+document.addEventListener('keydown', event => {
+  if(event.key === 'Escape') lightbox.classList.remove('open');
+});
+
+const slider = document.getElementById('thumb-size');
+
+if(window.innerWidth < 768){
+  slider.value = 120;
+}
+
+slider.oninput = () => {
+  document.getElementById('grid').style.setProperty('--thumb-size', slider.value + 'px');
+};
+
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-backdrop').classList.remove('open');
+}
+
+document.getElementById('menu-btn').onclick = () => {
+  const sidebar = document.getElementById('sidebar');
+  const backdrop = document.getElementById('sidebar-backdrop');
+  const isOpen = sidebar.classList.toggle('open');
+  backdrop.classList.toggle('open', isOpen);
+};
+
+document.getElementById('sidebar-backdrop').onclick = closeSidebar;
+
+loadStructure();
+</script>
+</body>
+</html>
